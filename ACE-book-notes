@@ -1,0 +1,70 @@
+Sercive accounts: -----------------------------------------------------------------------------------------------------------------------
+When you create a project that has the Compute Engine API enabled, a Compute Engine service
+account is created automatically. Similarly, if you have an App Engine application in your
+project, GCP will automatically create an App Engine service account. Both the Compute
+Engine and App Engine service accounts are granted editor roles on the projects in which
+they are created.
+
+Service accounts can be managed as a group of accounts at the project level or at the
+individual service account level. For example, if you grant iam.serviceAccountUser
+to a user for a specific project, then that user can manage all service accounts in the
+project. If you prefer to limit users to manage only specific service accounts, you could
+grant iam.serviceAccountUser for a specific service account.
+
+
+networking-VM : -----------------------------------------------------------------------------------------------------------------------
+use of dual network interfaces can be use-
+ful if you are running some type of proxy or server that acts as a control for flow of some
+traffic between the networks.
+
+
+GPUS: -----------------------------------------------------------------------------------------------------------------------
+GPUs are used for math-intensive applications such as visualizations and machine learning.
+GPUs perform math calculations and allow some work to be off-loaded from the CPU to
+the GPU.
+
+
+Snapshots: -----------------------------------------------------------------------------------------------------------------------
+If you are making a snapshot of a disk on a Windows server, check the Enable VSS box
+to create an application-consistent snapshot without having to shut down the instance.
+
+
+instance groups: -----------------------------------------------------------------------------------------------------------------------
+Managed groups are the preferred type of instance group.
+Unmanaged groups should be used only when you need to work with different configurations within different VMs within the group.
+
+
+kubernetes: -----------------------------------------------------------------------------------------------------------------------
+one IP address, and a set of ports. By doing this, you can deploy multiple instance of the same application, or different instances of different applications on the same node or different nodes, without having to change their configuration.
+
+
+App Engine: -----------------------------------------------------------------------------------------------------------------------
+Services are typically structured to perform a single function with complex applications made up of multiple services, known as microservices. One microservice may handle API requests for data access, while another microservice performs authentication and a third
+records data for billing purposes.
+
+autoscaling ---------------
+To specify automatic scaling, add a section to app.yaml that includes the term
+automatic_scaling followed by key-value pairs of configuration options. These include
+the following:
+■ ■ target_cpu_utilization
+■ ■ target_throughput_utilization
+■ ■ max_concurrent_requests
+■ ■ max_instances
+■ ■ min_instances
+■ ■ max_pending_latency
+■ ■ min_pending_latency
+Target CPU Utilization Specifies the maximum CPU utilization that occurs before additional instances are started.
+Target Throughput Utilization Specifies the maximum number of concurrent requests before additional instances are started. This is specified as a number between 0.5 and 0.95.
+Maximum Concurrent Requests Specifies the max concurrent requests an instance can accept before starting a new instance. The default is 10; the max is 80.
+Maximum and Minimum Instances Indicates the range of number of instances that can run for this application.
+Maximum and Minimum Latency Indicates the maximum and minimum time a request will wait in the queue to be processed.
+
+basic scaling ----------------
+The only parameters for basic scaling are idle_timeout and max_instances .
+
+
+------------------------------------------
+splitting traffic between app engine versions ( 40% to version 1 and 60% to version 2) :
+gcloud app services set-traffic serv1 --splits v1=.4,v2=.6
+--migrate  (that App Engine should migrate traffic from the previous version to the new version)
+--split-by  ( ip , cookie , random )

@@ -1,0 +1,588 @@
+Cloud shell provides the following:
+
+Temporary Compute Engine VM
+Command-line access to the instance via a browser
+5 GB of persistent disk storage ($HOME dir)
+Pre-installed Cloud SDK and other tools
+gcloud: for working with Google Compute Engine and many Google Cloud services
+gsutil: for working with Cloud Storage
+kubectl: for working with Google Container Engine and Kubernetes
+bq: for working with BigQuery
+Language support for Java, Go, Python, Node.js, PHP, and Ruby
+Web preview functionality
+Built-in authorization for access to resources and instances
+
+
+
+General -------------------------------------------------------------------------------------------------------------------------
+
+installing gcloud sdk on your machine 
+https://cloud.google.com/sdk/docs
+
+gcloud init 				# initialize
+
+gcloud auth login		 	# login
+gcloud projects list		# show projects available in this account
+gcloud config set project PROJECT-ID		# set project
+gcloud config list			# show selected project
+gcloud components install beta			# cloud functions are in beta component
+
+
+
+# display a list of all zones 
+gcloud compute zones list
+gcloud compute zones list | grep us-central1
+
+# change zone 
+gcloud config set compute/zone us-central1-b
+
+
+# list activate account names
+gcloud auth list
+
+
+#update gcloud commands:
+gcloud components update
+
+#install beta commands:
+gcloud components install beta
+
+
+projects --------------------------------------------------------------------------------------------------------------------------
+gcloud compute project-info describe
+
+switch between projects ------------
+ gcloud config list 
+ export PROJECT_1_ID=mysecond-project-id		# store it in a var 
+ gcloud config set project $PROJECT_1_ID
+
+
+
+vm instances ----------------------------------------------------------------------------------------------------------------------
+gcloud compute instances create ace-instance-1, ace-instance-2
+gcloud compute instances create ace-instance-1 ace-instance-2 -–zone us-central1-a
+
+#list instances
+gcloud compute instances list
+
+gcloud compute instances describe myvminstance
+gcloud compute addresses list
+
+gcloud compute instances simulate-maintenance-event myvmserver			
+# simulate maintenance event, we can use this to test if our instance is live migrated or not, which means in case of an error continues running or not {avilability policies} we can configure avilability policies as we need
+
+# create an instance 
+gcloud compute instances create "my-vm-2" --machine-type "n1-standard-1" --image-project "debian-cloud" \
+--image "debian-9-stretch-v20190213" --subnet "default"
+
+#list disk types available
+gcloud compute disk-types list
+
+
+--labels KEY=VALUE
+--machine-type n1-standard-1
+--preemtible					# if included, the vm will be preemtible
+
+# start, stop.. an instance
+gcloud compute instances stop INSTANCE-NAME
+
+
+--account (specifies accuont)
+--configuration (use conf file that conataint key pair values)
+--flatten   generates separate key-value records when a key has multiple values.
+--format	specifies output format CSV, JSON, YAML, text, or other possible options.
+--project  	specifies project
+--quiet		
+--verbosity  specifies the level of detailed inf, debug , info , warning , and error .
+
+
+gcloud compute instances start ch06-instance-1 ch06-instance-2 --async
+--async displays information about the start operation.
+
+gcloud compute zones list
+
+gcloud compute instances delete ch06-instance-1
+
+
+--delete-disks  delete disks when deleteing vms
+--keep-disks   keep disks when deleteing the VMs
+gcloud compute instances delete ch06-instance-1 --zone us-central2-b --keep-disks=all
+--delete-disks=data			delete all nonboot disks (delete disks that contain data, and keep disks that is bootable)
+
+
+gcloud compute instances list			view VM instances
+gcloud compute instances list --filter="zone:ZONE"			filter using zone
+--limit				limit number of VMs displayed
+--sort-by			sort list by a resource field
+
+show resource fields of a VM:
+gcloud compute instances describe
+
+
+
+Snapshots :-----------------------------------------------
+create snapshot
+gcloud compute disks snapshot DISK_NAME --snapshot-names=NAME
+
+view list of snapshots
+gcloud compute snapshots list
+
+detailed inf about a snapshot
+gcloud compute disks descripre SNAPSHOT_NAME 
+
+create a disk from a snapshot
+gcloud compute disks create DISK_NAME --source-snapshot=SNAPSHOT_NAME
+--size		specifies size of disk
+--type 
+--size=100 --type=pd-standard	
+
+
+
+Images : -------------------------------------------------
+create image
+gcloud compute images create IMAGE_NAME
+
+source image can be
+■  --source-disk
+■  --source-image
+■  --source-image-family		uses the latest version of an image in the family.
+■  --source-snapshot
+■  --source-uri					specify an image using a web address
+
+delete image 
+gcloud compute images delete IMAGE_NAME
+
+export image to cloud storage
+gcloud compute images export --destination-uri DESTINATION_URI --image IMAGE_NAME
+
+instances groups: ---------------------------------------
+create instance group, by default n1-standard1 image
+gcloud compute instance-templates create INSTANCE-TEMPLATE-NAME
+
+create an instance group template using an instance
+gcloud compute instance-templates create INSTANCE-TEMPLATE-NAME --source-instance=MY_VM
+
+delete intsnce group template
+gcloud compute instance-templates delete NAME
+
+list templates
+gcloud compute instance-templates list
+
+list instance groups
+gcloud compute instance-groups managed list-instances
+
+list instances in a instance group
+gcloud compute instance-groups managed list-instances INSTANCE-GROUP-NAME
+
+
+
+kubernetes:---------------------------------------------------------------------------------------------------------------------
+crating a cluster clusters:
+gcloud container clusters create ch07-cluster --num-nodes=3 --region=us-central1
+
+deploying application pods:
+delpoyments are created using console or yaml templates
+
+installing kubernetes cli:
+gcloud components install kubectl
+
+run a docker image:
+kubectl run ch07-app-deploy --image=ch07-app --port=8080
+
+scale up the recently created docker image:
+kubectl scale deployment ch07-app-deploy --replicas=5
+
+--------------------
+
+list basic informations of all clusters:
+gcloud container clusters list
+
+show detailed informations about a cluster: (using the zone or the region as a parameter)
+gcloud container clusters describe --zone us-central1-a standard-cluster-1
+
+-------------------
+
+first we must confige kubeconfig file, which contains information on how to communicate with the cluster API:
+gcloud container clusters get-credentials --zone us-central1-a standard-cluster-1
+
+list nodes:
+kubectl get nodes
+
+list pods:
+kubectl get pods
+
+for more detailed list:
+kubectl describe nodes
+kubectl describe pods
+
+-------------------- modifying nodes
+a cluster named standard-cluster-1 running a node pool called default-pool
+resizing size of cluster nodes:
+gcloud container clusters resize standard-cluster-1 --node-pool default-pool --size 5 --region=us-central1
+
+updating a cluster by enabling autoscaling:
+gcloud container clusters update standard-cluster-1 --enable-autoscaling --min-nodes 1 --max-nodes 5 --zone us-central1-a --node-pool default-pool
+
+-------------------- modifying pods
+to list deployments:
+kubectl get deployments
+
+best practice, to change deployments, because kubernetes will automatically maintain the number of pods from the deployment:
+kubectl scale deployment nginx-1 --replicas 5
+
+to make kubernetes manage the number of pods based on load , use autoscale:
+kubectl autoscale deployment nginx-1 --max 10 --min 1 --cpu-percent 80
+
+-------------------- modifying services
+list services:
+kubectl get services
+
+start a service:
+kubectl run hello-server --image=gcr.io/google/samples/hello-app:1.0 --port 8080
+
+services need to be exposed to be accessible outside the cluster:
+kubectl expose deployment hello-server --type="LoadBalancer"
+
+detele a service:
+kubectl delete service hello-server
+
+viewing my image repository:
+gcloud container images list
+
+viewing google containers:
+gcloud container images list --repository gcr.io/google-containers 
+
+view more details:
+gcloud container images describe gcr.io/appengflex-project-1/nginx
+
+
+
+
+App Engine ------------------------------------------------------------------------------------------------------------------------
+standard -----------------------------------
+gcloud components install app-engine-python
+
+git clone https://github.com/GoogleCloudPlatform/python-docs-samples
+cd python-docs-samples/appengine/standard/hello_world
+■ app.yaml
+■ main.py
+■ main_test.py
+
+app.ymal file specifies the version of Python, the API version and a Python parameter called threadsafe , which is set to true 
+The last three lines specify the script to run
+
+
+deploying the app:
+gcloud app deploy app.yml
+--version to specify a custom version ID
+--project to specify the project ID to use for this app
+--no-promote to deploy the app without routing traffic to it
+
+stoping versions (v1 and v2):
+gcloud app versions stop v1 v2
+
+
+
+storage ------------------------------------------------------------------------------------------------------------------------
+
+cloud storage ---------------------------------------------------------------------
+create bucket ----------------
+gsutil mb gs://mysecondbucket9999
+
+
+# create a bucket 
+export LOCATION=US
+gsutil mb -l $LOCATION gs://$DEVSHELL_PROJECT_ID-mybucket
+gsutil cp my-excellent-blog.png gs://$DEVSHELL_PROJECT_ID/my-excellent-blog.png				# putting a picture in it
+gsutil acl ch -u allUsers:R gs://$DEVSHELL_PROJECT_ID/my-excellent-blog.png 				# make it globally available
+
+
+upload file to bucket --------------
+ upload to shell
+ gsutil cp file gs://mybucket
+
+change region --------------
+ gcloud compute regions list
+ INFRACLASS_REGION=us-central1
+ echo $INFRACLASS_REGION
+ echo INFRACLASS_REGION=$INFRACLASS_REGION >> ~/infraclass/config
+
+ source infraclass/config		# set the environment variables
+
+ # make it persistent, when creating login shells, it will be setted as an enviroment variable
+ nano .profile
+ adding "source infraclass/config" in the end of file 		
+
+
+manually change bucket's sotrage (rewrite -s):
+gsutil rewrite -s regional gs://[PATH_TO_OBJECT]
+
+
+moving objects between buckets OR rename:
+gsutil mv gs://[SOURCE_BUCKET_NAME]/[SOURCE_OBJECT_NAME] gs://[DESTINATION_BUCKET_NAME]/[DESTINATION_OBJECT_NAME]
+
+
+gsutil acl ch -u [service-account-address]:W gs://bucketname
+-u specifies the user
+W   specifies the permission
+
+
+export:
+gcloud sql export sql ace-exam-mysql1 gs://ace-exam-buckete1/ace-exam-mysqlexport.sql --database=mysql
+gcloud sql export csv ...
+
+import:
+gcloud sql import sql ace-exam-mysql1 gs://ace-exam-buckete1/ace-exam-mysql-export.sql --database=mysql
+
+
+
+
+cloud SQL ------------------------------------------------------------------------
+connect to the instance ------------------
+gcloud sql connect ace-exam-mysql –user=root
+
+on demand backup
+gcloud sql backups create ––async ––instance [INSTANCE_NAME]
+
+automatic backup
+gcloud sql instances patch ace-exam-mysql –backup-start-time 01:00
+
+gcloud sql instances describe instancename
+
+cloud datastore -------------------------------------------------------------------
+creating backup (export)
+gcloud datastore export –namespaces='(default)' gs://ace_exam_backups
+u need to specify the namespace used by the entities, default namespace is (default)
+
+import a backup file (import)
+gcloud datastore import gs://ace_exam_backups/[FILE].overall_export_metadata
+
+cloud bigquery --------------------------------------------------------------------
+estimate how much data will be scanned
+bq ––location=[LOCATION] query ––use_legacy_sql=false ––dry_run [SQL_QUERY]
+
+export:
+bq extract --destination_format CSV --compression GZIP 'mydataset.mytable' gs://example-bucket/myfile.zip
+
+import:
+bq load --autodetect --source_format=CSV mydataset.mytable gs://ace-exam-biquery/mydata.csv
+--autodetect    to automatically detect the table schema from the file
+
+
+cloud pubsub ----------------------------------------------------------------------
+create a topic 
+gcloud pubsub topics create [TOPIC-NAME]
+
+create a subscription that reads from the topic
+gcloud pubsub subscriptions create [SUBSCRIPTION-NAME] ––topic [TOPIC-NAME]
+
+to test it(publishing a message in a topic):
+cloud pubsub topics publish [TOPIC_NAME] --message [MESSAGE]
+
+reading it from a subscription:
+gcloud pubsub subscriptions pull --auto-ack [SUBSCRIPTION_NAME]
+
+
+cloud bigtable --------------------------------------------------------------------
+install cbt command:
+gcloud components update
+gcloud components install cbt
+
+bigtable requires an environment conf to be stored in a .cbtrc file
+echo instance = ace-exam-bigtable >> ~/.cbtrc
+
+create a table:
+cbt createtable ace-exam-bt-table
+
+cerate a column family:
+cbt createfamily ace-exam-bt-table colfam1
+
+cbt set ace-exam-bt-table row1 colfam1:col1=ace-exam-value
+
+display the contents of a table:
+cbt read ace-exam-bt-table
+
+bigtable has no import or export options, to import or export we can do it using a java application or HBase interface
+download JAR file:
+curl -f -O http://repo1.maven.org/maven2/com/google/cloud/bigtable/bigtable-beam-import/1.6.0/bigtable-beam-import-1.6.0-shaded.jar
+
+exporting:
+java -jar bigtable-beam-import-1.6.0-shaded.jar export \
+--runner=dataflow \
+--project=[PROJECT_ID] \
+--bigtableInstanceId=[INSTANCE_ID] \
+--bigtableTableId=[TABLE_ID] \
+--destinationPath=gs://[BUCKET_NAME]/[EXPORT_PATH] \
+--tempLocation=gs://[BUCKET_NAME]/[TEMP_PATH] \
+--maxNumWorkers=[10x_NUMBER_OF_NODES] \
+--zone=[DATAFLOW_JOB_ZONE]
+
+java -jar bigtable-beam-import-1.6.0-shaded.jar export \
+--runner=dataflow \
+--project=my-project \
+--bigtableInstanceId=ace-exam-instance \
+--bigtableTableId=ace-exam-table1 \
+--destinationPath=gs://ace-exam-bucket1/ace-exam-table1 \
+--tempLocation=gs://my-export-bucket/jar-temp \
+--maxNumWorkers=30 \
+--zone=us-west2-a
+
+
+importing:
+java -jar bigtable-beam-import-1.6.0-shaded.jar import \
+--runner=dataflow \
+--project=my-project \
+--bigtableInstanceId= ace-exam-instance \
+--bigtableTableId= ace-exam-table1 \
+--sourcePattern='gs://my-export-bucket/my-table/part-*' \
+--tempLocation=gs://my-export-bucket/jar-temp \
+--maxNumWorkers=10 \
+--zone=us-west2-a
+
+
+
+cloud dataproc -----------------------------------------------------------------------
+creating a dataproc cluster
+gcloud dataproc clusters create cluster-bc3d ––zone us-west2-a
+
+submit jobs:
+gcloud dataproc jobs submit spark ––cluster cluster-bc3d
+
+exporting:
+gcloud beta dataproc clusters export [CLUSTER_NAME] --destination=[PATH_TO_EXPORT_FILE]
+gcloud beta dataproc clusters export ace-exam-dataproc-cluster --destination=gs://ace-exam-bucket1/mydataproc.yaml
+
+importing:
+gcloud beta dataproc clusters import [SOURCE_FILE]
+gcloud beta dataproc clusters import gs://ace-exam-bucket1/mydataproc.yaml
+
+
+
+
+Functions ------------------------------------------------------------------------------------------------------------------
+gcloud beta functions list
+gcloud beta functions describe function-1			# get more details about that function
+gcloud beta functions --help						# help
+
+gcloud beta functions call function-1 											
+gcloud beta functions call function-1 --data='{"message":"hello hello hello.."}'		# by send data argument
+
+
+gcloud beta functions logs read			# logs
+gcloud beta functions logs read --help
+
+gcloud beta functions delete function-1
+
+
+gcloud beta functions deploy --help			# deploy function
+
+
+deploying a function trigered by cloud stotage ----------------
+runtime : using Python 3.7 Node.js 6, or Node.js 8...
+trigger-resources :  bucket name associated with the trigger
+trigger-event : event that will trigger the execution of the function
+google.storage.object.finalize
+google.storage.object.delete
+google.storage.object.archive
+google.storage.object.metadataUpdate
+
+gcloud functions deploy cloud_storage_function_test --runtime python37 --trigger-resource gcp-ace-exam-test-bucket --trigger-event google.storage.object.finalize
+
+parametres for cloud storage:
+Cloud function name
+Memory allocated for the function
+Trigger
+Event type
+Source of the function code
+Runtime
+Source code
+Name of the Python or Node.js function to execute
+
+
+deploying a function trigered by cloud pub/sub ----------------
+gcloud functions deploy pub_sub_function_test --runtime python37 --trigger-topic gcp-ace-exam-test-topic
+
+parametres for cloud pub/sub:
+Cloud function name
+Memory allocated for the function
+Trigger
+Topic
+Source of the function code
+Runtime
+Source code
+Name of the Python or Node.js function to execute
+
+
+
+
+
+
+
+LABS ================================================================================================================================
+
+LAB --------------------------------------------------------------
+gcloud compute networks create privatenet --subnet-mode=custom
+gcloud compute networks subnets create privatesubnet-us --network=privatenet --region=us-central1 --range=172.16.0.0/24
+gcloud compute networks subnets create privatesubnet-eu --network=privatenet --region=europe-west1 --range=172.20.0.0/20
+gcloud compute networks list
+gcloud compute networks subnets list --sort-by=NETWORK
+
+---------------------
+gcloud compute firewall-rules create privatenet-allow-icmp-ssh-rdp --direction=INGRESS --priority=1000 --network=privatenet --action=ALLOW --rules=icmp,tcp:22,tcp:3389 --source-ranges=0.0.0.0/0
+gcloud compute firewall-rules list --sort-by=NETWORK
+---------------------
+gcloud compute instances create privatenet-us-vm --zone=us-central1-c --machine-type=f1-micro --subnet=privatesubnet-us
+gcloud compute instances list --sort-by=ZONE
+
+
+LAB (Implement Private Google Access and Cloud NAT) ----------------------------------------------------------------
+# access to a VM from cloud shell that hasn't have a pub addr
+gcloud compute ssh vm-internal --zone us-central1-c --tunnel-through-iap
+
+VM instances that have no external IP addresses can use Private Google Access to reach external IP addresses of Google APIs and services. By default, Private Google Access is disabled on a VPC network.
+
+1-creating a bucket 
+2- copying something to that bucket 
+gsutil cp gs://cloud-training/gcpnet/private/access.svg gs://[my_bucket]
+3- copying image from bucket to my cloud shell 
+gsutil cp gs://[my_bucket]/*.svg .		  # succeed operatoin
+4- trying to access a service from the VM (the service is the bucket that we created earlier)
+gsutil cp gs://[my_bucket]/*.svg .		  # failed operation  # because private google access is disabled by default in that network that VM instance is in
+
+after edit the network, we will be able to access and copy that image 
+
+
+
+
+
+
+virtual machines ------------------------------------------------------------------------------------------------------------------
+
+LAB (minecraft server) ----------------------
+(there are alot of steps, that are not mentioned here in this note, the steps can be found in the QWIKLABS directory )
+
+If you start the Minecraft server again now, it is tied to the life of your SSH session: that is, if you close your SSH terminal, the server is also terminated. To avoid this issue, you can use screen, an application that allows you to create a virtual terminal that can be "detached," becoming a background process, or "reattached," becoming a foreground process. When a virtual terminal is detached to the background, it will run whether you are logged in or not.
+
+1- To install screen, run the following command:
+
+sudo apt-get install -y screen
+
+2- To start your Minecraft server in a screen virtual terminal, run the following command: (Use the -S flag to name your terminal mcs)
+
+sudo screen -S mcs java -Xmx1024M -Xms1024M -jar server.jar nogui
+
+3- To detach the screen terminal, press Ctrl+A, Ctrl+D. The terminal continues to run in the background. To reattach the terminal, run the following command:
+
+sudo screen -r mcs
+
+----------------------------
+vm instances => vm instance => edit => custom metadata  --- you can use startup bash script, and shutdown bash script, to automate your startup and shutdown jobs
+----------------------------------------------
+
+
+
+
+
+
+
+
